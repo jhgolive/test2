@@ -308,7 +308,11 @@ async function loadWordList() {
     const delBtn = document.createElement("button");
     delBtn.textContent = "삭제";
     delBtn.className = "delete-btn";
-    delBtn.addEventListener("click", () => deleteDoc(doc(db, "wordList", docSnap.id)).then(loadWordList));
+    delBtn.addEventListener("click", async () => {
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+      await deleteDoc(doc(db, "wordList", docSnap.id));
+      loadWordList();
+    });
 
     btnRow.appendChild(editBtn);
     btnRow.appendChild(delBtn);
