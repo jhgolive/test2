@@ -152,6 +152,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const lettersCol = collection(db, "letters");
 const lettersList = document.getElementById("lettersList");
+const wordListCol = collection(db, "wordList");
 
 // 글자 등록
 document.getElementById("addBtn").addEventListener("click", async () => {
