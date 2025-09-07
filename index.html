@@ -29,6 +29,14 @@ ul#lettersList {
   box-sizing: border-box;
 }
 
+ul#wordListList {
+  list-style: none;
+  padding: 0 0px;      /* 좌우 여백 약간 */
+  margin: 0 auto;
+  width: 45ch;          /* 화면 전체 폭 */
+  box-sizing: border-box;
+}
+
 /* li 스타일 */
 li {
   display: flex;
@@ -93,6 +101,10 @@ li.add-li {
 @media (max-width: 480px) {
   li .btn-row button { width: 48%; }
   ul#lettersList {
+    width: 41ch;     /* PC에서는 고정 폭 */
+    margin: 0 auto;  /* 가운데 정렬 */
+  }
+  ul#wordListList {
     width: 41ch;     /* PC에서는 고정 폭 */
     margin: 0 auto;  /* 가운데 정렬 */
   }
