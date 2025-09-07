@@ -1,1 +1,227 @@
-﻿
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>텍스트 관리</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+/* 전체 body 설정 */
+body {
+  margin: 0;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;  /* 좌우 꽉 차도록 */
+  min-height: 100vh;
+  background: #111;
+  color: white;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* 글자 목록 */
+ul#lettersList {
+  list-style: none;
+  padding: 0 0px;      /* 좌우 여백 약간 */
+  margin: 0 auto;
+  width: 45ch;          /* 화면 전체 폭 */
+  box-sizing: border-box;
+}
+
+/* li 스타일 */
+li {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* 좌우 꽉 차도록 */
+  margin-bottom: 10px;
+  background: #222;
+  padding: 10px;
+  border-radius: 8px;
+  border: 2px solid #0a84ff;
+  box-sizing: border-box;
+  text-align: left;
+  width: 100%;          /* 화면 폭에 맞춤 */
+  word-break: break-word;
+}
+
+li span {
+  white-space: pre-wrap; /* 연속 띄어쓰기 + 줄바꿈 유지 */
+}
+  
+/* 제목 li */
+li.title-li {
+  text-align: center;
+}
+
+/* 버튼 row */
+li .btn-row {
+  display: flex;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+/* 수정 input */
+li input.edit-input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 2px solid #0a84ff;
+  border-radius: 4px;
+  display: none;
+}
+
+/* 버튼 스타일 */
+li button {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.edit-btn { background: #0a84ff; color: white; flex: 1; }
+.delete-btn { background: red; color: white; flex: 1; }
+.add-btn { background: #0a84ff; color: white; width: 100%; }
+
+li.add-li {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  li .btn-row button { width: 48%; }
+  ul#lettersList {
+    width: 41ch;     /* PC에서는 고정 폭 */
+    margin: 0 auto;  /* 가운데 정렬 */
+  }
+}
+</style>
+</head>
+<body>
+
+<ul id="lettersList">
+  <!-- 제목 -->
+  <li class="title-li"><span>텍스트 관리</span></li>
+  <!-- 글자 목록은 JS에서 삽입 -->
+  <!-- 입력창 + 등록 버튼 li -->
+  <li class="add-li">
+    <input type="text" id="letterInput" placeholder="글자 입력"/>
+    <button id="addBtn" class="add-btn">등록</button>
+  </li>
+<pre  style="text-align:left;">
+쩡햄Live
+자율적후원
+자율적후원ㅡㅡㅡ  ★ 큰 힘 감사합니다 ٩(ˊᗜˋ*)وㅡ
+1ㅡㅡㅡ 2ㅡㅡㅡ 3ㅡㅡ  ★ 큰 힘 감사합니다 ٩(ˊᗜˋ*)و
+6ㅡㅡㅡ 7ㅡㅡㅡ 8ㅡㅡ  ★ 큰 힘 감사합니다 ٩(ˊᗜˋ*)و
+구독좋아요
+감사합니다
+다시자유민주 다시윤석열 다시자유건국 YOONAGAIN
+★ Freedom is not free ★ 자유는 그냥 오지 않는다 ★
+</pre>
+</ul>
+  
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQGtOEcxFxl9FV7NASLgxLDc23u2vzS_0",
+  authDomain: "mygps-11798.firebaseapp.com",
+  projectId: "mygps-11798",
+  storageBucket: "mygps-11798.firebasestorage.app",
+  messagingSenderId: "271371741627",
+  appId: "1:271371741627:web:642901f43c5ad57d80bc9e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const lettersCol = collection(db, "letters");
+const lettersList = document.getElementById("lettersList");
+
+// 글자 등록
+document.getElementById("addBtn").addEventListener("click", async () => {
+  const text = document.getElementById("letterInput").value;
+  if (!text) return alert("글자를 입력하세요.");
+  await addDoc(lettersCol, { text, timestamp: Date.now() });
+  document.getElementById("letterInput").value = "";
+  loadLetters();
+});
+
+// 글자 삭제
+async function deleteLetter(id) {
+  if (!confirm("정말 삭제하시겠습니까?")) return;
+  await deleteDoc(doc(db, "letters", id));
+  loadLetters();
+}
+
+// 글자 수정/저장 토글
+async function toggleEdit(id, spanEl, inputEl, btnEl) {
+  const isEditing = inputEl.style.display === "block";
+  if (!isEditing) {
+    spanEl.style.display = "none";
+    inputEl.style.display = "block";
+    inputEl.focus();
+    inputEl.setSelectionRange(0, inputEl.value.length);
+    btnEl.textContent = "저장";
+  } else {
+    const newText = inputEl.value;
+    if (!newText) return;
+    await updateDoc(doc(db, "letters", id), { text: newText });
+    spanEl.textContent = newText;
+    inputEl.style.display = "none";
+    spanEl.style.display = "block";
+    btnEl.textContent = "수정";
+  }
+}
+
+// 글자 목록 불러오기
+async function loadLetters() {
+  lettersList.querySelectorAll("li:not(:first-child):not(.add-li)").forEach(li => li.remove());
+  const q = query(lettersCol, orderBy("timestamp", "asc"));
+  const snapshot = await getDocs(q);
+  snapshot.forEach(docSnap => {
+    const li = document.createElement("li");
+
+    const span = document.createElement("span");
+    span.textContent = docSnap.data().text;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "edit-input";
+    input.value = docSnap.data().text;
+
+    const btnRow = document.createElement("div");
+    btnRow.className = "btn-row";
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "수정";
+    editBtn.className = "edit-btn";
+    editBtn.addEventListener("click", () => toggleEdit(docSnap.id, span, input, editBtn));
+    input.addEventListener("keydown", e => { if (e.key === "Enter") toggleEdit(docSnap.id, span, input, editBtn); });
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "삭제";
+    delBtn.className = "delete-btn";
+    delBtn.addEventListener("click", () => deleteLetter(docSnap.id));
+
+    btnRow.appendChild(editBtn);
+    btnRow.appendChild(delBtn);
+
+    li.appendChild(span);
+    li.appendChild(input);
+    li.appendChild(btnRow);
+
+    const addLi = lettersList.querySelector(".add-li");
+    lettersList.insertBefore(li, addLi);
+  });
+}
+
+// 초기 로드
+loadLetters();
+</script>
+
+</body>
+</html>
