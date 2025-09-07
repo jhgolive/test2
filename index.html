@@ -265,6 +265,7 @@ async function loadWordList() {
 
     const span = document.createElement("span");
     span.textContent = `${data.words.join(", ")} (${data.color})`;
+    span.style.color = data.color;  // ← 여기서 글자 색 적용
 
     const input = document.createElement("input");
     input.type = "text";
