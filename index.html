@@ -6,28 +6,24 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-   body {
-        margin: 0;
-        height: 100vh;
-        background: white;
-        overflow: hidden;
-      }
-  
-      /* 🔹 가짜 커서 */
-      #pointer {
-        position: absolute;
-        width: 16px;
-        height: 24px;
-        background: black; /* 커서 기본 색 */
-        clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%); /* 기본 화살표 모양 */
-        pointer-events: none; /* 커서 자체가 클릭 막지 않음 */
-        transform: translate(-0%, -0%); /* 클릭 좌표 맞춤 */
-        transition: transform 0.05s linear;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="pointer"></div>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: white;
+    }
+    #pointer {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="pointer"></div>
 
   <script>
     // 🔹 Firebase 설정
@@ -44,6 +40,8 @@
     const db = firebase.database();
     const pointerRef = db.ref('pointer');
 
+    const pointer = document.getElementById('pointer');
+
     // 🔹 Firebase 데이터 수신
     pointerRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -52,10 +50,16 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
-      // 🔹 클릭 이벤트만 처리
+      pointer.style.left = x + 'px';
+      pointer.style.top = y + 'px';
+
       if (data.click) {
+        pointer.style.background = 'green';
+        setTimeout(() => pointer.style.background = 'red', 100);
+
+        // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
-        if (target) {
+        if (target && target !== pointer) {
           target.click();
         }
       }
