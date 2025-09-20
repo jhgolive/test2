@@ -30,8 +30,6 @@
     const db = firebase.database();
     const pointerRef = db.ref('pointer');
 
-    const pointer = document.getElementById('pointer');
-
     // 🔹 Firebase 데이터 수신
     pointerRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -40,16 +38,10 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
-      pointer.style.left = x + 'px';
-      pointer.style.top = y + 'px';
-
+      // 🔹 클릭 이벤트만 처리
       if (data.click) {
-        pointer.style.background = 'green';
-        setTimeout(() => pointer.style.background = 'red', 100);
-
-        // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
-        if (target && target !== pointer) {
+        if (target) {
           target.click();
         }
       }
