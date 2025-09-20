@@ -9,8 +9,18 @@
     body {
       margin: 0;
       height: 100vh;
-      background: black;
       overflow: hidden;
+    }
+
+    /* 🔹 iframe 전체 화면 */
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 0;
     }
 
     /* 🔹 가벼운 흰색 화살표 커서 */
@@ -28,10 +38,15 @@
       pointer-events: none;
       transform: translate(-0%, -0%);
       transition: left 0.05s linear, top 0.05s linear, background 0.1s;
+      z-index: 10; /* iframe 위로 표시 */
     }
   </style>
 </head>
 <body>
+  <!-- 🔹 웹페이지 iframe -->
+  <iframe src="https://www.naver.com"></iframe>
+
+  <!-- 🔹 포인터 -->
   <div id="pointer"></div>
 
   <script>
@@ -59,19 +74,23 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
-      // 🔹 포인터 위치 이동
       pointer.style.left = x + 'px';
       pointer.style.top = y + 'px';
 
-      // 🔹 클릭 표시
       if (data.click) {
         pointer.style.background = 'red';
         setTimeout(() => pointer.style.background = 'white', 100);
 
-        // 🔹 실제 클릭 실행
-        const target = document.elementFromPoint(x, y);
-        if (target && target !== pointer) {
-          target.click();
+        // 🔹 iframe 위의 실제 클릭 실행
+        const iframe = document.querySelector('iframe');
+        const rect = iframe.getBoundingClientRect();
+        const clickX = x - rect.left;
+        const clickY = y - rect.top;
+
+        // iframe 내부 클릭
+        if (iframe.contentWindow) {
+          const target = iframe.contentDocument.elementFromPoint(clickX, clickY);
+          if (target) target.click();
         }
       }
     });
