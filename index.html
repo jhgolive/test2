@@ -11,15 +11,14 @@
       height: 100vh;
       background: white;
     }
-    /* 🔹 가짜 포인터 스타일 */
     #pointer {
       position: absolute;
-      width: 24px;
-      height: 24px;
-      background: url('https://upload.wikimedia.org/wikipedia/commons/3/38/Cursor_arrow.svg') no-repeat center;
-      background-size: contain;
-      pointer-events: none;  /* 포인터 자체는 클릭 막지 않음 */
-      transform: translate(-10%, -10%); /* 위치 보정 */
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
     }
   </style>
 </head>
@@ -55,8 +54,8 @@
       pointer.style.top = y + 'px';
 
       if (data.click) {
-        pointer.style.filter = 'drop-shadow(0 0 5px green)';
-        setTimeout(() => pointer.style.filter = '', 150);
+        pointer.style.background = 'green';
+        setTimeout(() => pointer.style.background = 'red', 100);
 
         // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
