@@ -13,14 +13,20 @@
       overflow: hidden;
     }
 
-  /* 🔹 가벼운 흰색 커서 */
+    /* 🔹 가벼운 흰색 화살표 커서 */
     #pointer {
       position: absolute;
-      width: 6px;    /* 폭 최소화 */
-      height: 14px;  /* 높이 최소화 */
+      width: 12px;
+      height: 20px;
       background: white;
-      pointer-events: none; 
-      transform: translate(-50%, -50%);
+      clip-path: polygon(
+        0 0,      /* 화살표 끝 */
+        100% 50%, /* 오른쪽 중앙 */
+        0 100%,   /* 아래 끝 */
+        25% 50%   /* 중앙 삼각형 */
+      );
+      pointer-events: none;
+      transform: translate(-0%, -0%);
       transition: left 0.05s linear, top 0.05s linear, background 0.1s;
     }
   </style>
