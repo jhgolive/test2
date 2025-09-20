@@ -10,17 +10,21 @@
       margin: 0;
       height: 100vh;
       overflow: hidden;
+      background: white;
+      font-family: sans-serif;
     }
 
-    /* 🔹 iframe 전체 화면 */
-    iframe {
+    /* 🔹 콘텐츠 영역 */
+    #content {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      border: none;
+      overflow: auto;
       z-index: 0;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
     /* 🔹 가벼운 흰색 화살표 커서 */
@@ -28,7 +32,7 @@
       position: absolute;
       width: 12px;
       height: 20px;
-      background: white;
+      background: black;
       clip-path: polygon(
         0 0,      /* 화살표 끝 */
         100% 50%, /* 오른쪽 중앙 */
@@ -38,13 +42,27 @@
       pointer-events: none;
       transform: translate(-0%, -0%);
       transition: left 0.05s linear, top 0.05s linear, background 0.1s;
-      z-index: 10; /* iframe 위로 표시 */
+      z-index: 10;
+    }
+
+    /* 🔹 예시 버튼 */
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
     }
   </style>
 </head>
 <body>
-  <!-- 🔹 웹페이지 iframe -->
-  <iframe src="https://www.ainews1.co.kr"></iframe>
+  <!-- 🔹 자체 HTML 콘텐츠 -->
+  <div id="content">
+    <h1>🖥️ 테스트 페이지</h1>
+    <p>이 영역에서 포인터 이동과 클릭이 정상 작동합니다.</p>
+    <button onclick="alert('버튼 클릭!')">클릭 테스트</button>
+    <button onclick="alert('다른 버튼 클릭!')">버튼 2</button>
+    <p>스크롤도 가능합니다.</p>
+    <div style="height:1000px;"></div>
+  </div>
 
   <!-- 🔹 포인터 -->
   <div id="pointer"></div>
@@ -65,6 +83,7 @@
     const pointerRef = db.ref('pointer');
 
     const pointer = document.getElementById('pointer');
+    const content = document.getElementById('content');
 
     // 🔹 Firebase 데이터 수신
     pointerRef.on('value', (snapshot) => {
@@ -77,20 +96,15 @@
       pointer.style.left = x + 'px';
       pointer.style.top = y + 'px';
 
+      // 🔹 클릭 처리
       if (data.click) {
         pointer.style.background = 'red';
-        setTimeout(() => pointer.style.background = 'white', 100);
+        setTimeout(() => pointer.style.background = 'black', 100);
 
-        // 🔹 iframe 위의 실제 클릭 실행
-        const iframe = document.querySelector('iframe');
-        const rect = iframe.getBoundingClientRect();
-        const clickX = x - rect.left;
-        const clickY = y - rect.top;
-
-        // iframe 내부 클릭
-        if (iframe.contentWindow) {
-          const target = iframe.contentDocument.elementFromPoint(clickX, clickY);
-          if (target) target.click();
+        // content 내부에서 클릭
+        const target = document.elementFromPoint(x, y);
+        if (target && target !== pointer) {
+          target.click();
         }
       }
     });
