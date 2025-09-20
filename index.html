@@ -10,15 +10,19 @@
       margin: 0;
       height: 100vh;
       background: white;
+      overflow: hidden;
     }
+
+    /* 🔹 화살표 포인터 */
     #pointer {
       position: absolute;
-      width: 20px;
-      height: 20px;
-      background: red;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
+      width: 16px;
+      height: 24px;
+      background: black;
+      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
+      pointer-events: none; /* 클릭 방해 안 함 */
+      transform: translate(-0%, -0%);
+      transition: transform 0.05s linear;
     }
   </style>
 </head>
@@ -50,12 +54,14 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
+      // 🔹 포인터 위치 이동
       pointer.style.left = x + 'px';
       pointer.style.top = y + 'px';
 
+      // 🔹 클릭 표시
       if (data.click) {
         pointer.style.background = 'green';
-        setTimeout(() => pointer.style.background = 'red', 100);
+        setTimeout(() => pointer.style.background = 'black', 100);
 
         // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
