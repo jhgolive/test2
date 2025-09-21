@@ -58,10 +58,12 @@
       .then(html => {
         content.innerHTML = html;
 
-        // 🔹 이미지나 JS 경로 다시 바꿔야 할 경우
+        // 🔹 여기서 리소스 경로 재작성
         content.querySelectorAll('img, script, link').forEach(el => {
           const attr = el.tagName === 'LINK' ? 'href' : 'src';
           if (!el[attr]) return;
+          if (el[attr].startsWith("/proxy/")) return;
+          if (!el[attr].startsWith("http")) return;
           el[attr] = "/proxy/" + encodeURIComponent(el[attr]);
         });
       })
