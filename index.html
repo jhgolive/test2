@@ -2,38 +2,44 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Receiver</title>
-
-  <!-- Firebase -->
+  <title>Receiver - Proxy Render</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
-  <!-- CSS: 원본 CDN 직접 로드 -->
+   <!-- CSS 직접 CDN에서 로드 -->
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/common.min.css">
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/font.style.css">
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/plugins.min.css">
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/style.min.css">
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/design.style.css">
   <link rel="stylesheet" href="https://cdn.ainews1.co.kr/menuskin/s_A53/menubar.css">
-
   <style>
     body {
       margin: 0;
       height: 100vh;
-      overflow: hidden;
+      background: black;
+      overflow: auto;
     }
-    iframe {
+    #pointer {
+      position: absolute;
+      width: 12px;
+      height: 20px;
+      background: white;
+      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
+      pointer-events: none;
+      transform: translate(-0%, -0%);
+      transition: left 0.05s linear, top 0.05s linear, background 0.1s;
+      z-index: 9999;
+    }
+    #content {
       width: 100%;
-      height: 100%;
-      border: none;
+      min-height: 100%;
     }
   </style>
 </head>
 <body>
-  <!-- 원본 사이트 iframe -->
-  <iframe id="viewer" src="https://ainews1.co.kr"></iframe>
-
-  <!-- 이미지 예시 (원본 CDN 경로) -->
+  <div id="content">로딩 중...</div>
+  <div id="pointer"></div>
+   <!-- 이미지도 원본 경로 사용 -->
   <img src="https://cdn.ainews1.co.kr/image/sample/300x60_1.jpg" alt="">
   <img src="https://cdn.ainews1.co.kr/image/sample/300x80_3.jpg" alt="">
   <img src="https://cdn.ainews1.co.kr/image/sample/300x250_3.jpg" alt="">
@@ -43,34 +49,73 @@
   <img src="https://cdn.ainews1.co.kr/news/thumbnail/custom/20250922/16500_15931_123_1758452483_300.jpg" alt="">
 
   <script>
-    // Firebase 설정
+    // 🔹 Firebase 설정
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      apiKey: "AIzaSyAQGtOEcxFxl9FV7NASLgxLDc23u2vzS_0",
+      authDomain: "mygps-11798.firebaseapp.com",
+      databaseURL: "https://mygps-11798-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "mygps-11798",
+      storageBucket: "mygps-11798.firebasestorage.app",
+      messagingSenderId: "271371741627",
+      appId: "1:271371741627:web:642901f43c5ad57d80bc9e"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    const pointerRef = db.ref('pointer');
 
-    const iframe = document.getElementById("viewer");
+    const pointer = document.getElementById('pointer');
+    const content = document.getElementById('content');
 
-    // 원격 클릭 이벤트 수신 (예시)
-    db.ref("clicks").on("child_added", (snapshot) => {
-      const { x, y } = snapshot.val();
-      const iframeWindow = iframe.contentWindow;
+    // 🔹 프록시된 HTML 불러오기
+    const targetUrl = "https://proxy-production-627c.up.railway.app/proxy/https://ainews1.co.kr";
+    fetch(targetUrl)
+      .then(res => res.text())
+      .then(html => {
+        content.innerHTML = html;
 
-      if (iframeWindow) {
-        // iframe 내부에서 좌표 기반 클릭 시뮬레이션
-        const iframeDoc = iframeWindow.document;
-        const el = iframeDoc.elementFromPoint(x, y);
-        if (el) {
-          el.click();
-          console.log("Clicked element:", el);
+        const PROXY = "https://proxy-production-627c.up.railway.app/proxy/";
+        
+        content.querySelectorAll('img, script, link').forEach(el => {
+          const attr = el.tagName === 'LINK' ? 'href' : 'src';
+          if (!el[attr]) return;
+        
+          // 이미 proxy 경로이면 건너뛰기
+          if (el[attr].includes("/proxy/")) return;
+        
+          // 절대 URL만 proxy 처리
+          if (!el[attr].startsWith("http")) return;
+        
+          // proxy 적용 (Railway 서버 기준)
+          el[attr] = PROXY + encodeURIComponent(el[attr]);
+        });
+      })
+      .catch(err => content.innerHTML = "로드 실패: " + err);
+
+    // 🔹 Firebase 데이터 수신 + 클릭 시뮬레이션
+    pointerRef.on('value', snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+
+      const x = data.x * window.innerWidth;
+      const y = data.y * window.innerHeight;
+
+      pointer.style.left = x + 'px';
+      pointer.style.top = y + 'px';
+
+      if (data.click) {
+        pointer.style.background = 'red';
+        setTimeout(() => pointer.style.background = 'white', 100);
+
+        // 🔹 클릭 이벤트 시뮬레이션
+        const target = document.elementFromPoint(x, y);
+        if (target && target !== pointer) {
+          const evt = new MouseEvent('click', {
+            clientX: x,
+            clientY: y,
+            bubbles: true,
+            cancelable: true
+          });
+          target.dispatchEvent(evt);
         }
       }
     });
