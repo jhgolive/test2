@@ -58,19 +58,20 @@
       .then(html => {
         content.innerHTML = html;
 
-        // 🔹 리소스 경로 수정 (중첩 proxy 방지)
+        const PROXY = "https://proxy-production-627c.up.railway.app/proxy/";
+        
         content.querySelectorAll('img, script, link').forEach(el => {
           const attr = el.tagName === 'LINK' ? 'href' : 'src';
           if (!el[attr]) return;
-
+        
           // 이미 proxy 경로이면 건너뛰기
           if (el[attr].includes("/proxy/")) return;
-
+        
           // 절대 URL만 proxy 처리
           if (!el[attr].startsWith("http")) return;
-
-          // proxy 적용
-          el[attr] = "/proxy/" + encodeURIComponent(el[attr]);
+        
+          // proxy 적용 (Railway 서버 기준)
+          el[attr] = PROXY + encodeURIComponent(el[attr]);
         });
       })
       .catch(err => content.innerHTML = "로드 실패: " + err);
