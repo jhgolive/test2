@@ -13,18 +13,12 @@
       overflow: hidden;
     }
 
-    /* 🔹 가벼운 흰색 화살표 커서 */
     #pointer {
       position: absolute;
       width: 12px;
       height: 20px;
       background: white;
-      clip-path: polygon(
-        0 0,      /* 화살표 끝 */
-        100% 50%, /* 오른쪽 중앙 */
-        0 100%,   /* 아래 끝 */
-        25% 50%   /* 중앙 삼각형 */
-      );
+      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
       pointer-events: none;
       transform: translate(-0%, -0%);
       transition: left 0.05s linear, top 0.05s linear, background 0.1s;
@@ -32,9 +26,7 @@
   </style>
 </head>
 <body>
-    <div id="pointer"></div>
-  <iframe src="https://proxy-production-627c.up.railway.app/proxy/https://ainews1.co.kr" 
-        style="width:100%; height:100%; border:none;" id="targetFrame"></iframe>
+  <div id="pointer"></div>
 
   <script>
     // 🔹 Firebase 설정
@@ -43,7 +35,7 @@
       authDomain: "mygps-11798.firebaseapp.com",
       databaseURL: "https://mygps-11798-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "mygps-11798",
-      storageBucket: "mygps-11798.firebasestorage.app",
+      storageBucket: "mygps-11798.firebasedestorage.app",
       messagingSenderId: "271371741627",
       appId: "1:271371741627:web:642901f43c5ad57d80bc9e"
     };
@@ -53,6 +45,15 @@
 
     const pointer = document.getElementById('pointer');
 
+    // 🔹 Proxy로 HTML 가져와서 body에 삽입
+    async function loadPage(url) {
+      const resp = await fetch('/proxy/' + encodeURIComponent(url));
+      const html = await resp.text();
+      document.body.innerHTML += html; // 기존 pointer 유지 위해 +=
+    }
+
+    loadPage('https://ainews1.co.kr');
+
     // 🔹 Firebase 데이터 수신
     pointerRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -61,16 +62,13 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
-      // 🔹 포인터 위치 이동
       pointer.style.left = x + 'px';
       pointer.style.top = y + 'px';
 
-      // 🔹 클릭 표시
       if (data.click) {
         pointer.style.background = 'red';
         setTimeout(() => pointer.style.background = 'white', 100);
 
-        // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
         if (target && target !== pointer) {
           target.click();
