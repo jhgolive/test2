@@ -67,7 +67,7 @@
     const content = document.getElementById('content');
 
     // 🔹 프록시된 HTML 불러오기
-    const targetUrl = "https://proxy-production-627c.up.railway.app/proxy/https://ainews1.co.kr";
+    const targetUrl = PROXY + encodeURIComponent("https://ainews1.co.kr");
     fetch(targetUrl)
       .then(res => res.text())
       .then(html => {
