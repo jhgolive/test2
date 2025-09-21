@@ -57,13 +57,14 @@
       .then(res => res.text())
       .then(html => {
         content.innerHTML = html;
-
-        // 🔹 여기서 리소스 경로 재작성
+    
         content.querySelectorAll('img, script, link').forEach(el => {
           const attr = el.tagName === 'LINK' ? 'href' : 'src';
           if (!el[attr]) return;
-          if (el[attr].startsWith("/proxy/")) return;
-          if (!el[attr].startsWith("http")) return;
+    
+          if (el[attr].startsWith("/proxy/")) return; // 중복 proxy 방지
+          if (!el[attr].startsWith("http")) return; // 절대 URL만 처리
+    
           el[attr] = "/proxy/" + encodeURIComponent(el[attr]);
         });
       })
