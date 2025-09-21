@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Receiver</title>
+  <title>Receiver with Pointer</title>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
@@ -13,29 +13,31 @@
       overflow: hidden;
     }
 
-    /* 🔹 가벼운 흰색 화살표 커서 */
+    /* 포인터 스타일 */
     #pointer {
       position: absolute;
       width: 12px;
       height: 20px;
       background: white;
-      clip-path: polygon(
-        0 0,      /* 화살표 끝 */
-        100% 50%, /* 오른쪽 중앙 */
-        0 100%,   /* 아래 끝 */
-        25% 50%   /* 중앙 삼각형 */
-      );
+      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
       pointer-events: none;
       transform: translate(-0%, -0%);
       transition: left 0.05s linear, top 0.05s linear, background 0.1s;
+      z-index: 9999;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
   </style>
 </head>
 <body>
-  <iframe src="https://proxy-production-627c.up.railway.app/proxy/https://ainews1.co.kr" 
-        style="width:100%; height:100%; border:none;" id="targetFrame"></iframe>
+  <!-- iframe에 프록시 사이트 로드 -->
+  <iframe id="targetFrame" src="/proxy/https://ainews1.co.kr"></iframe>
 
-	<div id="pointer"></div>
+  <div id="pointer"></div>
 
   <script>
     // 🔹 Firebase 설정
@@ -62,16 +64,15 @@
       const x = data.x * window.innerWidth;
       const y = data.y * window.innerHeight;
 
-      // 🔹 포인터 위치 이동
+      // 포인터 위치 이동
       pointer.style.left = x + 'px';
       pointer.style.top = y + 'px';
 
-      // 🔹 클릭 표시
+      // 클릭 표시 및 실행
       if (data.click) {
         pointer.style.background = 'red';
         setTimeout(() => pointer.style.background = 'white', 100);
 
-        // 🔹 실제 클릭 실행
         const target = document.elementFromPoint(x, y);
         if (target && target !== pointer) {
           target.click();
