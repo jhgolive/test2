@@ -2,87 +2,75 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Receiver - Direct Render</title>
+  <title>Receiver</title>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- CSS: 원본 CDN 직접 로드 -->
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/common.min.css">
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/font.style.css">
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/plugins.min.css">
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/style.min.css">
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/css/design.style.css">
+  <link rel="stylesheet" href="https://cdn.ainews1.co.kr/menuskin/s_A53/menubar.css">
+
   <style>
     body {
       margin: 0;
       height: 100vh;
-      background: black;
       overflow: hidden;
-    }
-    #pointer {
-      position: absolute;
-      width: 12px;
-      height: 20px;
-      background: white;
-      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
-      pointer-events: none;
-      transform: translate(-0%, -0%);
-      transition: left 0.05s linear, top 0.05s linear, background 0.1s;
-      z-index: 9999;
     }
     iframe {
       width: 100%;
       height: 100%;
       border: none;
-      background: white;
     }
   </style>
 </head>
 <body>
-  <!-- 🔹 원본 사이트를 직접 iframe으로 로드 -->
+  <!-- 원본 사이트 iframe -->
   <iframe id="viewer" src="https://ainews1.co.kr"></iframe>
-  <div id="pointer"></div>
+
+  <!-- 이미지 예시 (원본 CDN 경로) -->
+  <img src="https://cdn.ainews1.co.kr/image/sample/300x60_1.jpg" alt="">
+  <img src="https://cdn.ainews1.co.kr/image/sample/300x80_3.jpg" alt="">
+  <img src="https://cdn.ainews1.co.kr/image/sample/300x250_3.jpg" alt="">
+  <img src="https://cdn.ainews1.co.kr/image/sample/300x80_5.jpg" alt="">
+  <img src="https://cdn.ainews1.co.kr/image/logo/toplogo_20250407024112.png" alt="">
+  <img src="https://cdn.ainews1.co.kr/news/thumbnail/custom/20250922/16494_15927_1454_1758442494_300.jpg" alt="">
+  <img src="https://cdn.ainews1.co.kr/news/thumbnail/custom/20250922/16500_15931_123_1758452483_300.jpg" alt="">
 
   <script>
-    // 🔹 Firebase 설정
+    // Firebase 설정
     const firebaseConfig = {
-      apiKey: "AIzaSyAQGtOEcxFxl9FV7NASLgxLDc23u2vzS_0",
-      authDomain: "mygps-11798.firebaseapp.com",
-      databaseURL: "https://mygps-11798-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "mygps-11798",
-      storageBucket: "mygps-11798.firebasestorage.app",
-      messagingSenderId: "271371741627",
-      appId: "1:271371741627:web:642901f43c5ad57d80bc9e"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const pointerRef = db.ref('pointer');
 
-    const pointer = document.getElementById('pointer');
-    const iframe = document.getElementById('viewer');
+    const iframe = document.getElementById("viewer");
 
-    // 🔹 Firebase 데이터 수신 + 포인터 이동/클릭
-    pointerRef.on('value', snapshot => {
-      const data = snapshot.val();
-      if (!data) return;
+    // 원격 클릭 이벤트 수신 (예시)
+    db.ref("clicks").on("child_added", (snapshot) => {
+      const { x, y } = snapshot.val();
+      const iframeWindow = iframe.contentWindow;
 
-      const x = data.x * window.innerWidth;
-      const y = data.y * window.innerHeight;
-
-      pointer.style.left = x + 'px';
-      pointer.style.top = y + 'px';
-
-      if (data.click) {
-        pointer.style.background = 'red';
-        setTimeout(() => pointer.style.background = 'white', 100);
-
-        try {
-          const iframeDoc = iframe.contentWindow.document;
-          const target = iframeDoc.elementFromPoint(x, y);
-          if (target) {
-            const evt = new MouseEvent('click', {
-              clientX: x,
-              clientY: y,
-              bubbles: true,
-              cancelable: true
-            });
-            target.dispatchEvent(evt);
-          }
-        } catch (err) {
-          console.warn("iframe 클릭 접근 불가(CORS 제한):", err);
+      if (iframeWindow) {
+        // iframe 내부에서 좌표 기반 클릭 시뮬레이션
+        const iframeDoc = iframeWindow.document;
+        const el = iframeDoc.elementFromPoint(x, y);
+        if (el) {
+          el.click();
+          console.log("Clicked element:", el);
         }
       }
     });
