@@ -14,7 +14,7 @@
     const btn = document.getElementById('loadBtn');
     btn.addEventListener('click', async () => {
       const query = document.getElementById('query').value || "삼성";
-      const url = `https://your-app.up.railway.app/news?query=${encodeURIComponent(query)}&display=5`;
+      const url = `https://news-production-ba64.up.railway.app/news?query=${encodeURIComponent(query)}&display=5`;
 
       try {
         const res = await fetch(url);
