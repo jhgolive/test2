@@ -2,81 +2,34 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Receiver with Pointer</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    body {
-      margin: 0;
-      height: 100vh;
-      background: black;
-      overflow: hidden;
-    }
-
-    /* 포인터 스타일 */
-    #pointer {
-      position: absolute;
-      width: 12px;
-      height: 20px;
-      background: white;
-      clip-path: polygon(0 0, 100% 50%, 0 100%, 25% 50%);
-      pointer-events: none;
-      transform: translate(-0%, -0%);
-      transition: left 0.05s linear, top 0.05s linear, background 0.1s;
-      z-index: 9999;
-    }
-
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-  </style>
+  <title>네이버 뉴스 보기</title>
 </head>
 <body>
-  <!-- iframe에 프록시 사이트 로드 -->
-  <iframe id="targetFrame" src="/proxy/https://ainews1.co.kr"></iframe>
-
-  <div id="pointer"></div>
+  <h1>네이버 뉴스 확인</h1>
+  <input type="text" id="query" placeholder="검색어 입력">
+  <button id="loadBtn">뉴스 불러오기</button>
+  <ul id="newsList"></ul>
 
   <script>
-    // 🔹 Firebase 설정
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQGtOEcxFxl9FV7NASLgxLDc23u2vzS_0",
-      authDomain: "mygps-11798.firebaseapp.com",
-      databaseURL: "https://mygps-11798-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "mygps-11798",
-      storageBucket: "mygps-11798.firebasestorage.app",
-      messagingSenderId: "271371741627",
-      appId: "1:271371741627:web:642901f43c5ad57d80bc9e"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const pointerRef = db.ref('pointer');
+    const btn = document.getElementById('loadBtn');
+    btn.addEventListener('click', async () => {
+      const query = document.getElementById('query').value || "삼성";
+      const url = `https://your-app.up.railway.app/news?query=${encodeURIComponent(query)}&display=5`;
 
-    const pointer = document.getElementById('pointer');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const list = document.getElementById('newsList');
+        list.innerHTML = "";
 
-    // 🔹 Firebase 데이터 수신
-    pointerRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if (!data) return;
-
-      const x = data.x * window.innerWidth;
-      const y = data.y * window.innerHeight;
-
-      // 포인터 위치 이동
-      pointer.style.left = x + 'px';
-      pointer.style.top = y + 'px';
-
-      // 클릭 표시 및 실행
-      if (data.click) {
-        pointer.style.background = 'red';
-        setTimeout(() => pointer.style.background = 'white', 100);
-
-        const target = document.elementFromPoint(x, y);
-        if (target && target !== pointer) {
-          target.click();
-        }
+        data.items.forEach(item => {
+          const li = document.createElement('li');
+          li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
+          list.appendChild(li);
+        });
+      } catch (err) {
+        alert("뉴스 불러오기 실패");
+        console.error(err);
       }
     });
   </script>
