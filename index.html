@@ -2,22 +2,22 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <title>뉴스</title>
   <style>
-    body {
-      margin: 0;
-      background: transparent; /* 프리즘에서 배경 투명 가능 */
-      overflow: hidden;
-    }
+    body { margin:0; background:transparent; overflow:hidden; }
     #news {
       white-space: nowrap;
       display: inline-block;
       font-size: 28px;
       color: white;
       font-weight: bold;
-      animation: scroll 30s linear infinite;
+      text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black, -1px -1px black, -1px 1px black, 1px -1px black, 1px 1px black;
+      will-change: transform;
+      backface-visibility: hidden;
+      animation: scroll 120s linear infinite;
     }
     @keyframes scroll {
-      0% { transform: translateX(100%); }
+      0% { transform: translateX(100vw); }
       100% { transform: translateX(-100%); }
     }
   </style>
@@ -28,15 +28,16 @@
   <script>
     async function loadNews() {
       try {
-        let res = await fetch("https://YOUR-SERVER/news");
-        let data = await res.json();
-        document.getElementById("news").innerText = data.articles.join("   |   ");
-      } catch (e) {
+        const res = await fetch("/news");
+        const data = await res.json();
+        document.getElementById("news").innerText = data.news;
+      } catch(e) {
         console.error("뉴스 불러오기 실패", e);
       }
     }
+
     loadNews();
-    setInterval(loadNews, 60000); // 1분마다 업데이트
+    setInterval(loadNews, 300000); // 5분마다 갱신
   </script>
 </body>
 </html>
