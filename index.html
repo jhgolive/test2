@@ -2,36 +2,41 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>네이버 뉴스 보기</title>
+  <style>
+    body {
+      margin: 0;
+      background: transparent; /* 프리즘에서 배경 투명 가능 */
+      overflow: hidden;
+    }
+    #news {
+      white-space: nowrap;
+      display: inline-block;
+      font-size: 28px;
+      color: white;
+      font-weight: bold;
+      animation: scroll 30s linear infinite;
+    }
+    @keyframes scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+  </style>
 </head>
 <body>
-  <h1>네이버 뉴스 확인</h1>
-  <input type="text" id="query" placeholder="검색어 입력">
-  <button id="loadBtn">뉴스 불러오기</button>
-  <ul id="newsList"></ul>
+  <div id="news">뉴스 로딩 중...</div>
 
   <script>
-    const btn = document.getElementById('loadBtn');
-    btn.addEventListener('click', async () => {
-      const query = document.getElementById('query').value || "삼성";
-      const url = `https://news-production-ba64.up.railway.app/news?query=${encodeURIComponent(query)}&display=5`;
-
+    async function loadNews() {
       try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const list = document.getElementById('newsList');
-        list.innerHTML = "";
-
-        data.items.forEach(item => {
-          const li = document.createElement('li');
-          li.innerHTML = `<a href="${item.link}" target="_blank">${item.title}</a>`;
-          list.appendChild(li);
-        });
-      } catch (err) {
-        alert("뉴스 불러오기 실패");
-        console.error(err);
+        let res = await fetch("https://YOUR-SERVER/news");
+        let data = await res.json();
+        document.getElementById("news").innerText = data.articles.join("   |   ");
+      } catch (e) {
+        console.error("뉴스 불러오기 실패", e);
       }
-    });
+    }
+    loadNews();
+    setInterval(loadNews, 60000); // 1분마다 업데이트
   </script>
 </body>
 </html>
