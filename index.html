@@ -24,7 +24,6 @@
 </head>
 <body>
   <div id="news">뉴스 로딩 중...</div>
-
   <script>
     async function loadNews() {
       try {
@@ -35,7 +34,6 @@
         console.error("뉴스 불러오기 실패", e);
       }
     }
-
     loadNews();
     setInterval(loadNews, 300000); // 5분마다 갱신
   </script>
