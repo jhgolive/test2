@@ -2,7 +2,6 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta charset="UTF-8">
 <title>뉴스 스크롤 + 클릭 음성</title>
 <style>
   body {
@@ -64,18 +63,17 @@ const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
 
 let newsQueue = [];
 
-// 음성 재생 함수
+// 음성 재생
 function speak(text) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
-    utterance.rate = 1;
-    utterance.pitch = 1;
+    window.speechSynthesis.cancel(); // 이전 음성 취소
     window.speechSynthesis.speak(utterance);
   }
 }
 
-// 뉴스 가져오기 (서버 fetch)
+// 뉴스 서버 fetch
 async function fetchNews() {
   try {
     const res = await fetch(API_URL);
@@ -89,18 +87,24 @@ async function fetchNews() {
   }
 }
 
-// 뉴스 클릭 시 음성 + 스크롤
+// 클릭 시 뉴스 음성 + 스크롤
 newsEl.addEventListener("click", () => {
   if (newsQueue.length === 0) return;
-  const text = newsQueue.shift(); // 큐에서 뉴스 가져오기
 
-  // 음성 재생
-  speak(text);
+  const text = newsQueue.shift();
 
-  // 스크롤 애니메이션
+  // DOM 업데이트
+  newsEl.textContent = text;
+
+  // 음성 재생 (requestAnimationFrame으로 분리)
+  requestAnimationFrame(() => {
+    speak(text);
+  });
+
+  // 스크롤
   const wrapperWidth = newsEl.parentElement.offsetWidth;
   const textWidth = newsEl.offsetWidth;
-  const speed = 100; // px/sec
+  const speed = 100;
   const duration = (wrapperWidth + textWidth) / speed;
 
   newsEl.style.transition = "none";
