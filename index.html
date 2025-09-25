@@ -50,11 +50,18 @@
   <div id="news">뉴스 로딩 중...</div>
 </div>
 
+<!-- 시작 버튼 -->
+<button id="startBtn" style="position:fixed;top:50px;left:10px;z-index:10000;">
+  뉴스 시작
+</button>
+
 <script>
 const newsEl = document.getElementById("news");
+const startBtn = document.getElementById("startBtn");
 const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
 
 let pendingNews = null;
+let started = false;
 
 // 음성 읽기 함수
 function speak(text, duration) {
@@ -62,8 +69,7 @@ function speak(text, duration) {
     window.speechSynthesis.cancel(); // 이전 음성 취소
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
-    // 말 속도를 스크롤 속도에 맞춤
-    utterance.rate = Math.min(2, Math.max(0.5, text.length / 10 / duration));
+    utterance.rate = 1;  // 기본 속도 (필요시 조절)
     utterance.pitch = 1;
     window.speechSynthesis.speak(utterance);
   }
@@ -76,18 +82,17 @@ async function loadNews() {
     const data = await res.json();
     if (data.news) {
       pendingNews = data.news;
-      startScroll(pendingNews);
+      if (started) startScroll(pendingNews);
     }
   } catch (err) {
     console.error("뉴스 불러오기 실패", err);
   }
 }
 
-// CSS 애니메이션으로 스크롤
+// 스크롤 시작
 function startScroll(text) {
   newsEl.textContent = text;
 
-  // 텍스트 길이에 따라 애니메이션 시간 조절 (px/sec = 100)
   const wrapperWidth = newsEl.parentElement.offsetWidth;
   const textWidth = newsEl.offsetWidth;
   const speed = 100; // px/sec
@@ -95,27 +100,31 @@ function startScroll(text) {
 
   newsEl.style.animationDuration = `${duration}s`;
 
-  // 음성 읽기 추가
+  // 음성 읽기
   speak(text, duration);
 
-  // 애니메이션 끝나면 새 뉴스 있으면 다시 실행
   newsEl.addEventListener("animationend", function handler() {
     newsEl.removeEventListener("animationend", handler);
     if (pendingNews) {
       startScroll(pendingNews);
       pendingNews = null;
     }
-    loadNews(); // 한 바퀴 끝날 때 서버 갱신
+    loadNews(); 
   });
 
-  // 강제로 애니메이션 재시작
+  // 강제 애니메이션 재시작
   newsEl.style.animation = "none";
-  newsEl.offsetHeight; // 리플로우
+  newsEl.offsetHeight;
   newsEl.style.animation = `scroll linear ${duration}s 1`;
 }
 
-// 초기 실행
-loadNews();
+// 버튼 클릭 후 시작
+startBtn.addEventListener("click", () => {
+  started = true;
+  loadNews();
+  startBtn.remove(); // 버튼 화면에서 제거
+});
 </script>
 </body>
+
 </html>
