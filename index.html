@@ -34,14 +34,6 @@
     position: absolute;
     top: 0;
     white-space: nowrap;
-    animation-name: scroll;
-    animation-timing-function: linear;
-    animation-iteration-count: 1;
-  }
-
-  @keyframes scroll {
-    from { transform: translateX(100vw); }
-    to { transform: translateX(-100%); }
   }
 
   #startBtn {
@@ -80,22 +72,22 @@ function speak(text) {
   }
 }
 
-// 뉴스 가져오기
+// 서버에서 뉴스 가져오기
 async function loadNews() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
     if (data.news) {
       pendingNews = data.news;
-      if (started) startScroll(pendingNews);
+      if (started) scrollNews(pendingNews);
     }
   } catch (err) {
     console.error("뉴스 불러오기 실패", err);
   }
 }
 
-// 스크롤 + 음성 시작
-function startScroll(text) {
+// 뉴스 스크롤 + 음성
+function scrollNews(text) {
   newsEl.textContent = text;
 
   const wrapperWidth = newsEl.parentElement.offsetWidth;
@@ -103,25 +95,25 @@ function startScroll(text) {
   const speed = 100; // px/sec
   const duration = (wrapperWidth + textWidth) / speed;
 
-  newsEl.style.animationDuration = `${duration}s`;
-
   // 음성 재생
   speak(text);
 
+  // 스크롤 애니메이션
+  newsEl.style.transition = "none";
+  newsEl.style.transform = `translateX(${wrapperWidth}px)`;
+  requestAnimationFrame(() => {
+    newsEl.style.transition = `transform ${duration}s linear`;
+    newsEl.style.transform = `translateX(-${textWidth}px)`;
+  });
+
   // 애니메이션 끝나면 다음 뉴스 실행
-  newsEl.addEventListener("animationend", function handler() {
-    newsEl.removeEventListener("animationend", handler);
+  setTimeout(() => {
     if (pendingNews) {
-      startScroll(pendingNews);
+      scrollNews(pendingNews);
       pendingNews = null;
     }
     loadNews();
-  });
-
-  // 강제 애니메이션 재시작
-  newsEl.style.animation = "none";
-  newsEl.offsetHeight; // 리플로우
-  newsEl.style.animation = `scroll linear ${duration}s 1`;
+  }, duration * 1000);
 }
 
 // 버튼 클릭 후 첫 뉴스 시작
@@ -133,24 +125,15 @@ startBtn.addEventListener("click", () => {
   dummy.lang = 'ko-KR';
   window.speechSynthesis.speak(dummy);
 
-  // 첫 뉴스 표시 + 스크롤 + 음성
+  // 첫 뉴스 테스트
   const firstNews = "뉴스 스크롤 테스트입니다.";
-  newsEl.textContent = firstNews;
-  speak(firstNews);
+  scrollNews(firstNews);
 
-  const wrapperWidth = newsEl.parentElement.offsetWidth;
-  const textWidth = newsEl.offsetWidth;
-  const speed = 100;
-  const duration = (wrapperWidth + textWidth) / speed;
-  newsEl.style.animationDuration = `${duration}s`;
-  newsEl.style.animation = "none";
-  newsEl.offsetHeight;
-  newsEl.style.animation = `scroll linear ${duration}s 1`;
-
+  // 버튼 제거
   startBtn.remove();
 
-  // 첫 뉴스 끝나면 서버에서 실제 뉴스 가져오기
-  setTimeout(loadNews, duration * 1000);
+  // 첫 뉴스 끝난 후 서버 뉴스 가져오기
+  setTimeout(loadNews, 1000);
 });
 </script>
 </body>
