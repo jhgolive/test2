@@ -9,13 +9,19 @@
     background: transparent;
     overflow: hidden;
   }
+
   #wrapper {
     white-space: nowrap;
     overflow: hidden;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateY(-8px);
     width: 100vw;
-    height: 40px; /* 자막 높이 */
+    height: 40px;
+    z-index: 9999;
   }
+
   #news {
     display: inline-block;
     font-size: 28px;
@@ -28,6 +34,14 @@
     position: absolute;
     top: 0;
     white-space: nowrap;
+    animation-name: scroll;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+  }
+
+  @keyframes scroll {
+    from { transform: translateX(100vw); }
+    to { transform: translateX(-100%); }
   }
 </style>
 </head>
@@ -38,52 +52,70 @@
 
 <script>
 const newsEl = document.getElementById("news");
-const wrapperEl = document.getElementById("wrapper");
-const API_URL = "https://news-production-b9d6.up.railway.app/news";
-let newsText = "";
+const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
+
+let pendingNews = null;
+
+// 음성 읽기 함수
+function speak(text, duration) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel(); // 이전 음성 취소
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'ko-KR';
+    // 말 속도를 스크롤 속도에 맞춤
+    utterance.rate = Math.min(2, Math.max(0.5, text.length / 10 / duration));
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+}
 
 // 뉴스 가져오기
 async function loadNews() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
-    if (data.news && data.news !== newsText) {
-      newsText = data.news;
-      newsEl.innerText = newsText;
-      startScroll();
+    if (data.news) {
+      pendingNews = data.news;
+      startScroll(pendingNews);
     }
   } catch (err) {
     console.error("뉴스 불러오기 실패", err);
   }
 }
 
-// 글자 스크롤
-let animFrame;
-function startScroll() {
-  cancelAnimationFrame(animFrame);
-  newsEl.style.transform = `translateX(${wrapperEl.offsetWidth}px)`;
-  const totalWidth = newsEl.offsetWidth + wrapperEl.offsetWidth;
-  let startTime = null;
+// CSS 애니메이션으로 스크롤
+function startScroll(text) {
+  newsEl.textContent = text;
 
-  function step(timestamp) {
-    if (!startTime) startTime = timestamp;
-    const elapsed = timestamp - startTime;
-    const speed = 100; // px/sec
-    const x = wrapperEl.offsetWidth - (elapsed / 1000) * speed;
-    newsEl.style.transform = `translateX(${x}px)`;
-    if (x + newsEl.offsetWidth > 0) {
-      animFrame = requestAnimationFrame(step);
-    } else {
-      // 끝까지 가면 바로 다시 시작
-      startScroll();
+  // 텍스트 길이에 따라 애니메이션 시간 조절 (px/sec = 100)
+  const wrapperWidth = newsEl.parentElement.offsetWidth;
+  const textWidth = newsEl.offsetWidth;
+  const speed = 100; // px/sec
+  const duration = (wrapperWidth + textWidth) / speed;
+
+  newsEl.style.animationDuration = `${duration}s`;
+
+  // 음성 읽기 추가
+  speak(text, duration);
+
+  // 애니메이션 끝나면 새 뉴스 있으면 다시 실행
+  newsEl.addEventListener("animationend", function handler() {
+    newsEl.removeEventListener("animationend", handler);
+    if (pendingNews) {
+      startScroll(pendingNews);
+      pendingNews = null;
     }
-  }
-  animFrame = requestAnimationFrame(step);
+    loadNews(); // 한 바퀴 끝날 때 서버 갱신
+  });
+
+  // 강제로 애니메이션 재시작
+  newsEl.style.animation = "none";
+  newsEl.offsetHeight; // 리플로우
+  newsEl.style.animation = `scroll linear ${duration}s 1`;
 }
 
-// 초기 로드 + 5분마다 갱신
+// 초기 실행
 loadNews();
-setInterval(loadNews, 300000);
 </script>
 </body>
 </html>
