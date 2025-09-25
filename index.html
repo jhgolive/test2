@@ -69,10 +69,9 @@ const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
 let pendingNews = null;
 let started = false;
 
-// 음성 읽기 함수
+// 음성 재생 함수
 function speak(text) {
   if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ko-KR';
     utterance.rate = 1;
@@ -106,7 +105,7 @@ function startScroll(text) {
 
   newsEl.style.animationDuration = `${duration}s`;
 
-  // 음성 읽기
+  // 음성 재생
   speak(text);
 
   // 애니메이션 끝나면 다음 뉴스 실행
@@ -116,7 +115,7 @@ function startScroll(text) {
       startScroll(pendingNews);
       pendingNews = null;
     }
-    loadNews(); 
+    loadNews();
   });
 
   // 강제 애니메이션 재시작
@@ -129,12 +128,16 @@ function startScroll(text) {
 startBtn.addEventListener("click", () => {
   started = true;
 
-  // 첫 뉴스 미리 준비 (테스트용 텍스트)
+  // 첫 클릭으로 SpeechSynthesis 활성화
+  const dummy = new SpeechSynthesisUtterance("뉴스 시작");
+  dummy.lang = 'ko-KR';
+  window.speechSynthesis.speak(dummy);
+
+  // 첫 뉴스 표시 + 스크롤 + 음성
   const firstNews = "뉴스 스크롤 테스트입니다.";
   newsEl.textContent = firstNews;
   speak(firstNews);
 
-  // 스크롤 시작
   const wrapperWidth = newsEl.parentElement.offsetWidth;
   const textWidth = newsEl.offsetWidth;
   const speed = 100;
@@ -144,7 +147,6 @@ startBtn.addEventListener("click", () => {
   newsEl.offsetHeight;
   newsEl.style.animation = `scroll linear ${duration}s 1`;
 
-  // 버튼 제거
   startBtn.remove();
 
   // 첫 뉴스 끝나면 서버에서 실제 뉴스 가져오기
