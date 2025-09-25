@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>뉴스 스크롤 + 음성</title>
+<meta charset="UTF-8">
+<title>뉴스 스크롤 + 클릭 음성</title>
 <style>
   body {
     margin: 0;
@@ -34,32 +35,34 @@
     position: absolute;
     top: 0;
     white-space: nowrap;
+    cursor: pointer;
   }
 
-  #startBtn {
+  #instructions {
     position: fixed;
     top: 50px;
     left: 10px;
     z-index: 10000;
     font-size: 18px;
+    color: white;
+    background: rgba(0,0,0,0.5);
     padding: 5px 10px;
+    border-radius: 5px;
   }
 </style>
 </head>
 <body>
 <div id="wrapper">
-  <div id="news">뉴스 로딩 중...</div>
+  <div id="news">뉴스 로딩 중... 클릭하면 음성 재생</div>
 </div>
 
-<button id="startBtn">뉴스 시작</button>
+<div id="instructions">뉴스를 클릭하면 음성이 나오고 스크롤됩니다.</div>
 
 <script>
 const newsEl = document.getElementById("news");
-const startBtn = document.getElementById("startBtn");
 const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
 
-let pendingNews = null;
-let started = false;
+let newsQueue = [];
 
 // 음성 재생 함수
 function speak(text) {
@@ -72,69 +75,57 @@ function speak(text) {
   }
 }
 
-// 서버에서 뉴스 가져오기
-async function loadNews() {
+// 뉴스 가져오기 (서버 fetch)
+async function fetchNews() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
     if (data.news) {
-      pendingNews = data.news;
-      if (started) scrollNews(pendingNews);
+      newsQueue.push(data.news);
+      newsEl.textContent = "뉴스 준비됨: 클릭하면 음성 재생";
     }
   } catch (err) {
     console.error("뉴스 불러오기 실패", err);
   }
 }
 
-// 뉴스 스크롤 + 음성
-function scrollNews(text) {
-  newsEl.textContent = text;
-
-  const wrapperWidth = newsEl.parentElement.offsetWidth;
-  const textWidth = newsEl.offsetWidth;
-  const speed = 100; // px/sec
-  const duration = (wrapperWidth + textWidth) / speed;
+// 뉴스 클릭 시 음성 + 스크롤
+newsEl.addEventListener("click", () => {
+  if (newsQueue.length === 0) return;
+  const text = newsQueue.shift(); // 큐에서 뉴스 가져오기
 
   // 음성 재생
   speak(text);
 
   // 스크롤 애니메이션
+  const wrapperWidth = newsEl.parentElement.offsetWidth;
+  const textWidth = newsEl.offsetWidth;
+  const speed = 100; // px/sec
+  const duration = (wrapperWidth + textWidth) / speed;
+
   newsEl.style.transition = "none";
   newsEl.style.transform = `translateX(${wrapperWidth}px)`;
+
   requestAnimationFrame(() => {
     newsEl.style.transition = `transform ${duration}s linear`;
     newsEl.style.transform = `translateX(-${textWidth}px)`;
   });
 
-  // 애니메이션 끝나면 다음 뉴스 실행
+  // 스크롤 끝나면 위치 초기화
   setTimeout(() => {
-    if (pendingNews) {
-      scrollNews(pendingNews);
-      pendingNews = null;
+    newsEl.style.transition = "none";
+    newsEl.style.transform = `translateX(0px)`;
+    if (newsQueue.length > 0) {
+      newsEl.textContent = "다음 뉴스 준비됨: 클릭하면 음성 재생";
+    } else {
+      newsEl.textContent = "뉴스 없음. 잠시 후 새 뉴스가 도착합니다.";
     }
-    loadNews();
   }, duration * 1000);
-}
-
-// 버튼 클릭 후 첫 뉴스 시작
-startBtn.addEventListener("click", () => {
-  started = true;
-
-  // 첫 클릭으로 SpeechSynthesis 활성화
-  const dummy = new SpeechSynthesisUtterance("뉴스 시작");
-  dummy.lang = 'ko-KR';
-  window.speechSynthesis.speak(dummy);
-
-  // 첫 뉴스 테스트
-  const firstNews = "뉴스 스크롤 테스트입니다.";
-  scrollNews(firstNews);
-
-  // 버튼 제거
-  startBtn.remove();
-
-  // 첫 뉴스 끝난 후 서버 뉴스 가져오기
-  setTimeout(loadNews, 1000);
 });
+
+// 초기 뉴스 가져오기
+fetchNews();
+setInterval(fetchNews, 15000); // 15초마다 새 뉴스 fetch
 </script>
 </body>
 </html>
