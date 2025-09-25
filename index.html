@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>뉴스 + 음성 스크롤</title>
+<title>뉴스 스크롤 + 음성</title>
 <style>
   body {
     margin: 0;
@@ -16,7 +16,6 @@
     position: fixed;
     top: 0;
     left: 0;
-    transform: translateY(-8px);
     width: 100vw;
     height: 40px;
     z-index: 9999;
@@ -34,14 +33,6 @@
     position: absolute;
     top: 0;
     white-space: nowrap;
-    animation-name: scroll;
-    animation-timing-function: linear;
-    animation-iteration-count: 1;
-  }
-
-  @keyframes scroll {
-    from { transform: translateX(100vw); }
-    to { transform: translateX(-100%); }
   }
 
   #startBtn {
@@ -66,37 +57,39 @@ const newsEl = document.getElementById("news");
 const startBtn = document.getElementById("startBtn");
 const API_URL = "https://proxy-production-b9d6.up.railway.app/news";
 
-let pendingNews = null;
-let speechEnabled = false;
+let newsQueue = [];
 
-// 음성 재생
-function speak(text) {
+// 음성 재생 함수 (큐에 따라 순차적으로 재생)
+function speakQueue(queue, index = 0) {
+  if (index >= queue.length) return;
   if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(queue[index]);
     utterance.lang = 'ko-KR';
     utterance.rate = 1;
     utterance.pitch = 1;
-    window.speechSynthesis.cancel(); // 이전 음성 취소
+    utterance.onend = () => {
+      speakQueue(queue, index + 1);
+    };
     window.speechSynthesis.speak(utterance);
   }
 }
 
-// 뉴스 가져오기
-async function loadNews() {
+// 뉴스 fetch
+async function fetchNews() {
   try {
     const res = await fetch(API_URL);
     const data = await res.json();
     if (data.news) {
-      pendingNews = data.news;
-      if (speechEnabled) startScroll(pendingNews);
+      newsQueue.push(data.news);
+      return newsQueue;
     }
   } catch (err) {
     console.error("뉴스 불러오기 실패", err);
   }
 }
 
-// 뉴스 스크롤 + 음성
-function startScroll(text) {
+// 스크롤 애니메이션
+function scrollNews(text) {
   newsEl.textContent = text;
 
   const wrapperWidth = newsEl.parentElement.offsetWidth;
@@ -104,37 +97,48 @@ function startScroll(text) {
   const speed = 100; // px/sec
   const duration = (wrapperWidth + textWidth) / speed;
 
-  newsEl.style.animationDuration = `${duration}s`;
+  newsEl.style.transition = "none";
+  newsEl.style.transform = `translateX(${wrapperWidth}px)`;
 
-  // 음성 재생
-  speak(text);
-
-  // 애니메이션 끝나면 새 뉴스 있으면 다시 실행
-  newsEl.addEventListener("animationend", function handler() {
-    newsEl.removeEventListener("animationend", handler);
-    if (pendingNews) {
-      startScroll(pendingNews);
-      pendingNews = null;
-    }
-    loadNews(); // 한 바퀴 끝날 때 서버 갱신
+  requestAnimationFrame(() => {
+    newsEl.style.transition = `transform ${duration}s linear`;
+    newsEl.style.transform = `translateX(-${textWidth}px)`;
   });
 
-  // 강제로 애니메이션 재시작
-  newsEl.style.animation = "none";
-  newsEl.offsetHeight; // 리플로우
-  newsEl.style.animation = `scroll linear ${duration}s 1`;
+  // 스크롤 끝나면 다음 뉴스 처리
+  setTimeout(async () => {
+    if (newsQueue.length > 0) {
+      const nextText = newsQueue.shift();
+      scrollNews(nextText);
+    } else {
+      // 새 뉴스 가져오기
+      const newQueue = await fetchNews();
+      if (newQueue && newQueue.length > 0) {
+        const nextText = newsQueue.shift();
+        scrollNews(nextText);
+      }
+    }
+  }, duration * 1000);
 }
 
-// 사용자 클릭으로 SpeechSynthesis 활성화 후 뉴스 시작
-startBtn.addEventListener("click", () => {
-  speechEnabled = true;
+// 첫 클릭 시 뉴스 시작
+startBtn.addEventListener("click", async () => {
+  startBtn.remove();
+
+  // 첫 클릭으로 SpeechSynthesis 활성화
   const dummy = new SpeechSynthesisUtterance("뉴스 시작");
   dummy.lang = 'ko-KR';
   window.speechSynthesis.speak(dummy);
 
-  startBtn.remove();
+  // 서버에서 뉴스 가져오기
+  await fetchNews();
 
-  loadNews(); // 첫 뉴스 불러오기 + 스크롤 + 음성 시작
+  if (newsQueue.length > 0) {
+    // 첫 뉴스부터 스크롤 + 음성
+    speakQueue([...newsQueue]); // 음성 큐
+    const firstText = newsQueue.shift();
+    scrollNews(firstText);
+  }
 });
 </script>
 </body>
